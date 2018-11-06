@@ -1,0 +1,51 @@
+- hosts: homecloud
+  remote_user: debian
+  become: yes
+  become_method: sudo
+  roles:
+    - { role: "nickjj.docker" }
+  tasks:    
+  - name: install htop
+    apt:
+      name: htop
+      update_cache: yes
+  - name: install python-setuptools
+    apt:
+      name: python-setuptools
+      update_cache: yes
+  - name: install git
+    apt:
+      name: git
+      update_cache: yes
+  - name: clone pip repo
+    git:
+      repo: https://github.com/pypa/pip
+      dest: /usr/local/share/pip
+  - name: install pip
+    command: python setup.py install
+    args:
+      chdir: /usr/local/share/pip
+  - name: install requests
+    pip:
+      name: requests==2.18.1
+  - name: install docker
+    pip:
+      name: docker
+  - name: install docker-compose
+    pip:
+      name: docker-compose
+    # create docker compose file, upload and run it...
+  - name: copy docker-compose file
+    copy:
+      src: docker-compose.yml
+      dest: /home/debian/docker-compose.yml
+  - name: docker compose down
+    command: docker-compose down
+    args:
+      chdir: /home/debian
+  - name: docker compose up
+    command: docker-compose up -d
+    args:
+      chdir: /home/debian
+  # - name: start nextcloud docker container
+    # command: docker run --restart always -d -p 8080:80 nextcloud

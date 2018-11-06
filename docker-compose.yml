@@ -1,0 +1,29 @@
+version: '3'
+services:
+  db:
+    image: postgres
+    restart: always
+    environment:
+        - POSTGRES_USER=postgres
+        - POSTGRES_PASSWORD=secret
+        - POSTGRES_DB=workaround
+    ports:
+    - 5432:5432
+    volumes:
+    - /home/debian/volumes/postgres/data:/var/lib/postgresql/data
+  nextcloud:
+    image: nextcloud
+    restart: always
+    ports:
+        - 8080:80
+    environment:
+        - POSTGRES_DB=nextcloud 
+        - POSTGRES_USER=postgres 
+        - POSTGRES_PASSWORD=secret
+        - POSTGRES_HOST=db
+        - NEXTCLOUD_ADMIN_USER=admin
+        - NEXTCLOUD_ADMIN_PASSWORD=admin
+    volumes:
+    - /home/debian/volumes/nextcloud:/var/www/html
+    depends_on:
+      - db
