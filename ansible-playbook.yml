@@ -2,12 +2,25 @@
   remote_user: debian
   become: yes
   become_method: sudo
+  vars_files:
+    - vars/main.yml
+    - vars/geerlingguy.security.yml
+    - vars/geerlingguy.firewall.yml
   roles:
-    - { role: "nickjj.docker" }
+    # - { role: dev-sec.os-hardening }
+    - { role: geerlingguy.security }
+    - { role: geerlingguy.firewall }
+    - { role: nickjj.docker }
+    - { role: geerlingguy.ruby }
   tasks:    
+  # Install packages
   - name: install htop
     apt:
       name: htop
+      update_cache: yes
+  - name: install vim
+    apt:
+      name: vim
       update_cache: yes
   - name: install python-setuptools
     apt:
@@ -17,6 +30,11 @@
     apt:
       name: git
       update_cache: yes
+  - name: install fuse
+    apt:
+      name: fuse
+      update_cache: yes
+      
   - name: clone pip repo
     git:
       repo: https://github.com/pypa/pip
@@ -28,6 +46,18 @@
   - name: install requests
     pip:
       name: requests==2.18.1
+
+  # Mount OVH object storage as volume
+  - name: download ovh svfs package
+    get_url:
+      url: https://github.com/ovh/svfs/releases/download/v0.9.1/svfs-linux-amd64
+      dest: /home/debian/svfs-linux-amd64
+  # - name: install ovh svfs
+    # apt:
+      # deb: /home/debian/svfs-linux-amd64
+
+
+  #Docker
   - name: install docker
     pip:
       name: docker
@@ -47,5 +77,3 @@
     command: docker-compose up -d
     args:
       chdir: /home/debian
-  # - name: start nextcloud docker container
-    # command: docker run --restart always -d -p 8080:80 nextcloud
