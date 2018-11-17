@@ -22,6 +22,10 @@
     apt:
       name: vim
       update_cache: yes
+  - name: install rsync
+    apt:
+      name: rsync
+      update_cache: yes
   - name: install python-setuptools
     apt:
       name: python-setuptools
@@ -34,7 +38,16 @@
     apt:
       name: fuse
       update_cache: yes
-      
+  - cron:
+      name: "backup postgres"
+      minute: "0"
+      hour: "2"
+      job: "docker exec -it $(docker ps -a -q --filter ancestor=postgres --format={{ '{{.ID}}' }}) pg_dump -Upostgres nextcloud > `date +\\%d\\%m\\%y`_nextcloud.backup && cp `date +\\%d\\%m\\%y`_nextcloud.backup /home/debian/homecloud_storage/backups/db && rm `date +\\%d\\%m\\%y`_nextcloud.backup"
+  - cron:
+      name: "backup nextcloud"
+      minute: "30"
+      hour: "2"
+      job: "mkdir /home/debian/homecloud_storage/backups/nextcloud/`date +\\%d\\%m\\%y`_nextcloud && cp -rv volumes/nextcloud/config volumes/nextcloud/data volumes/nextcloud/themes homecloud_storage/backups/nextcloud/`date +\\%d\\%m\\%y`_nextcloud"
   - name: clone pip repo
     git:
       repo: https://github.com/pypa/pip
@@ -50,13 +63,21 @@
   # Mount OVH object storage as volume
   - name: download ovh svfs package
     get_url:
-      url: https://github.com/ovh/svfs/releases/download/v0.9.1/svfs-linux-amd64
-      dest: /home/debian/svfs-linux-amd64
-  # - name: install ovh svfs
-    # apt:
-      # deb: /home/debian/svfs-linux-amd64
-
-
+      url: https://github.com/ovh/svfs/releases/download/v0.9.1/svfs_0.9.1_amd64.deb
+      dest: /home/debian/svfs_0.9.1_amd64.deb
+  - name: install ovh svfs
+    apt:
+      deb: /home/debian/svfs_0.9.1_amd64.deb
+  - name: Creates directory homecloud_storage
+    file: path=/home/debian/homecloud_storage state=directory
+  - name: copy openrc.sh
+    copy:
+      src: openrc.sh
+      dest: /home/debian/openrc.sh
+  - name: mount volume
+    shell: source /home/debian/openrc.sh && mount -t svfs -o username=$OS_USERNAME,password=$OS_PASSWORD,tenant=$OS_TENANT_NAME,region=$OS_REGION_NAME,storage_url=https://storage.sbg5.cloud.ovh.net/v1/AUTH_eb9248a4bc284392ac5a6c875fd694c0,container=homecloud homecloud /home/debian/homecloud_storage/
+    args:
+      executable: /bin/bash 
   #Docker
   - name: install docker
     pip:
@@ -74,6 +95,7 @@
     args:
       chdir: /home/debian
   - name: docker compose up
+  
     command: docker-compose up -d
     args:
       chdir: /home/debian
