@@ -42,7 +42,7 @@
       name: "backup postgres"
       minute: "0"
       hour: "2"
-      job: "docker exec -it $(docker ps -a -q --filter ancestor=postgres --format={{ '{{.ID}}' }}) pg_dump -Upostgres nextcloud > `date +\\%d\\%m\\%y`_nextcloud.backup && cp `date +\\%d\\%m\\%y`_nextcloud.backup /home/debian/homecloud_storage/backups/db && rm `date +\\%d\\%m\\%y`_nextcloud.backup"
+      job: "docker exec -it $(docker ps -a -q --filter ancestor=postgres --format={{ '{{.ID}}' }}) pg_dump -Upostgres nextcloud > /home/debian/`date +\\%d\\%m\\%y`_nextcloud.backup && cp /home/debian/`date +\\%d\\%m\\%y`_nextcloud.backup /home/debian/homecloud_storage/backups/db && rm /home/debian/`date +\\%d\\%m\\%y`_nextcloud.backup"
   - cron:
       name: "backup nextcloud"
       minute: "30"

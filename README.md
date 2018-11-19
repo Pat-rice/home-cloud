@@ -14,3 +14,4 @@
 - Unmount properly: `fusermount -uz /home/debian/homecloud_storage/`
 - Run dropbox container: `docker run -d --restart=always --name=dropbox -v /home/debian/dropbox_backup:/dbox/Dropbox -e DBOX_UID=xxx janeczku/dropbox`
 - error "User does not have connect privileges" `delete db, put installed=false in config.php of nextcloud, start db, restart nextcloud`
+- `DELETE FROM oc_bruteforce_attempts WHERE ip = ‘aaa.bbb.ccc.ddd’;`
