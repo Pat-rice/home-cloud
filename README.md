@@ -7,6 +7,8 @@
 - `ansible-galaxy install geerlingguy.ruby`
 - Create `hosts` file with your server endpoints. You can rename `hosts.example`
 - `ansible-playbook -i hosts ansible-playbook.yml`
+- Copy `traefik.toml.example` and rename it to `traefik.toml`, update the content to match your domain name
+- Add an `openrc.sh` that you can find in your OVH account
 
 
 ## Tips
