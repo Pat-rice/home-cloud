@@ -1,0 +1,19 @@
+- hosts: homecloud
+  remote_user: root
+  tasks:
+    - group: name=sudo state=present
+    - name: Add deployer user and add it to sudo
+      user: name=deployer
+        state=present
+        createhome=yes
+      become: yes
+      become_method: "sudo"
+    - name: sudo without password for deployer
+      copy:
+        content: 'deployer ALL=(ALL:ALL) NOPASSWD:ALL'
+        dest: /etc/sudoers.d/deployer_nopasswd
+        mode: 0440
+    - name: Set up authorized keys for the deployer user
+      authorized_key: user=deployer key="{{item}}"
+      with_file:
+        - ~/.ssh/perso/homecloud.pub
