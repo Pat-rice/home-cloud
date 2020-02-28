@@ -6,6 +6,7 @@
       user: name=deployer
         state=present
         createhome=yes
+        shell=/bin/bash
       become: yes
       become_method: "sudo"
     - name: sudo without password for deployer

@@ -1,7 +1,4 @@
 - hosts: homecloud
-  remote_user: debian
-  become: yes
-  become_method: sudo
   vars_files:
     - vars/main.yml
     - vars/geerlingguy.security.yml
@@ -18,26 +15,37 @@
     apt:
       name: htop
       update_cache: yes
+    become: yes
   - name: install vim
     apt:
       name: vim
       update_cache: yes
+    become: yes
+  - name: install tmux
+    apt:
+      name: tmux
+      update_cache: yes
+    become: yes
   - name: install rsync
     apt:
       name: rsync
       update_cache: yes
-  - name: install python-setuptools
+    become: yes
+  - name: install s3fs
     apt:
-      name: python-setuptools
+      name: s3fs
       update_cache: yes
+    become: yes
+  - name: install python3-pip
+    apt:
+      name: python3-pip
+      update_cache: yes
+    become: yes
   - name: install git
     apt:
       name: git
       update_cache: yes
-  - name: install fuse
-    apt:
-      name: fuse
-      update_cache: yes
+    become: yes
   # - cron:
   #     name: "backup postgres"
   #     minute: "0"
@@ -48,66 +56,58 @@
   #     minute: "30"
   #     hour: "2"
   #     job: "mkdir /home/debian/homecloud_storage/backups/nextcloud/`date +\\%d\\%m\\%y`_nextcloud && cp -rv volumes/nextcloud/config volumes/nextcloud/data volumes/nextcloud/themes homecloud_storage/backups/nextcloud/`date +\\%d\\%m\\%y`_nextcloud"
-  - name: clone pip repo
-    git:
-      repo: https://github.com/pypa/pip
-      dest: /usr/local/share/pip
-  - name: install pip
-    command: python setup.py install
-    args:
-      chdir: /usr/local/share/pip
-  - name: install requests
-    pip:
-      name: requests==2.18.1
  # Configure traefik
   - name: Create acme.json if it doesn't exists
     file: 
-      path: /home/debian/acme.json 
+      path: /home/deployer/acme.json
       state: touch 
       mode: '600'
   - name: copy traefik config
     copy:
       src: traefik.toml
-      dest: /home/debian/traefik.toml
-  # Mount OVH object storage as volume
-  # - name: download ovh svfs package
-  #   get_url:
-  #     url: https://github.com/ovh/svfs/releases/download/v0.9.1/svfs_0.9.1_amd64.deb
-  #     dest: /home/debian/svfs_0.9.1_amd64.deb
-  # - name: install ovh svfs
-  #   apt:
-  #     deb: /home/debian/svfs_0.9.1_amd64.deb
-  # - name: Creates directory homecloud_storage
-  #   file: path=/home/debian/homecloud_storage state=directory
-  # - name: copy openrc.sh
-  #   copy:
-  #     src: openrc.sh
-  #     dest: /home/debian/openrc.sh
-  # - name: mount volume
-  #   shell: source /home/debian/openrc.sh && mount -t svfs -o username=$OS_USERNAME,password=$OS_PASSWORD,tenant=$OS_TENANT_NAME,region=$OS_REGION_NAME,storage_url=https://storage.sbg5.cloud.ovh.net/v1/AUTH_eb9248a4bc284392ac5a6c875fd694c0,container=homecloud homecloud /home/debian/homecloud_storage/
-  #   args:
-  #     executable: /bin/bash 
+      dest: /home/deployer/traefik.toml
+
+  # Mount Scaleway object storage as volume
+  - name: copy .passwd-s3fs
+    copy:
+      src: .passwd-s3fs
+      dest: /home/deployer/.passwd-s3fs
+      mode: '600'
+  - name: Creates directory homecloud_storage
+    file: path=/home/deployer/homecloud_storage state=directory
+  - name: Unmount a mounted volume
+    mount:
+      path: /home/deployer/homecloud_storage
+      state: unmounted
+    become: yes
+  - name: mount volume
+    shell: s3fs homecloud /home/deployer/homecloud_storage -o passwd_file=/home/deployer/.passwd-s3fs,url=https://s3.fr-par.scw.cloud
+    args:
+      executable: /bin/bash
   #Docker
   - name: install docker
     pip:
+      executable: /usr/bin/pip3
       name: docker
   - name: install docker-compose
     pip:
+      executable: /usr/bin/pip3
       name: docker-compose
   - name: docker network create web
     command: docker network create web
+    ignore_errors: yes
     args:
-      chdir: /home/debian
+      chdir: /home/deployer
   - name: copy docker-compose file
     copy:
       src: docker-compose.yml
-      dest: /home/debian/docker-compose.yml
+      dest: /home/deployer/docker-compose.yml
   - name: docker compose down
     command: docker-compose down
+    ignore_errors: yes
     args:
-      chdir: /home/debian
+      chdir: /home/deployer
   - name: docker compose up
-  
     command: docker-compose up -d
     args:
-      chdir: /home/debian
+      chdir: /home/deployer
