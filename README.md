@@ -7,10 +7,10 @@
 - `ansible-galaxy install geerlingguy.ruby`
 - Create `hosts` file with your server endpoints. You can rename `hosts.example`
 - Create `deployer` user as scaleway is using root user `ansible-playbook -i hosts create-deployer-user.yml`
-- `ansible-playbook -i hosts ansible-playbook.yml`
 - Update port in hosts as ssh port became `2865`
-- Copy `traefik.toml.example` and rename it to `traefik.toml`, update the content to match your domain name
-- Add an `openrc.sh` that you can find in your OVH account
+- Copy `traefik.yml.example` and rename it to `traefik.yml`, update the content to match your domain name
+- Add an `.passwd-s3fs` that you can find in your S3 like provider account (see s3fs documentation)
+- `ansible-playbook -i hosts ansible-playbook.yml`
 
 
 ## Tips

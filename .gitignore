@@ -4,3 +4,5 @@ config.php
 traefik.toml
 .idea
 .passwd-s3fs
+*.retry
+traefik.yml

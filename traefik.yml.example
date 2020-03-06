@@ -1,0 +1,27 @@
+entryPoints:
+  web:
+    address: ":80"
+
+  web-secure:
+    address: ":443"
+
+providers:
+  docker: {}
+
+certificatesResolvers:
+  sample:
+    acme:
+      email: contact@mydomain.com
+      storage: /etc/traefik/acme/acme.json
+      httpChallenge:
+        # used during the challenge
+        entryPoint: web
+
+#log:
+#  level: DEBUG
+#  filePath: /tmp/treafik.log
+#  format: json
+
+#api: # should enable port 8080
+#  insecure: true
+#  dashboard: true

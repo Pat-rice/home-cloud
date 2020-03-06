@@ -1,2 +1,2 @@
 [homecloud]
-12.34.56.78:22		ansible_ssh_private_key_file=/path/to/private/key
+12.34.56.78:22	ansible_user=deployer ansible_ssh_private_key_file=/path/to/private/key

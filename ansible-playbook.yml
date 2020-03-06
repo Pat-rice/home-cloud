@@ -4,11 +4,11 @@
     - vars/geerlingguy.security.yml
     - vars/geerlingguy.firewall.yml
   roles:
-    # - { role: dev-sec.os-hardening }
-    - { role: geerlingguy.security }
-    - { role: geerlingguy.firewall }
-    - { role: nickjj.docker }
-    - { role: geerlingguy.ruby }
+    - { role: dev-sec.os-hardening, become: yes }
+    - { role: geerlingguy.security, become: yes }
+    - { role: geerlingguy.firewall, become: yes }
+    - { role: nickjj.docker, become: yes }
+    - { role: geerlingguy.ruby, become: yes }
   tasks:    
   # Install packages
   - name: install htop
@@ -57,15 +57,23 @@
   #     hour: "2"
   #     job: "mkdir /home/debian/homecloud_storage/backups/nextcloud/`date +\\%d\\%m\\%y`_nextcloud && cp -rv volumes/nextcloud/config volumes/nextcloud/data volumes/nextcloud/themes homecloud_storage/backups/nextcloud/`date +\\%d\\%m\\%y`_nextcloud"
  # Configure traefik
+  - name: Creates treafik directory for config
+    file: path=/home/deployer/volumes/traefik state=directory
+    become: true
+  - name: Creates acme treafik directory for config
+    file: path=/home/deployer/volumes/traefik/acme state=directory
+    become: true
   - name: Create acme.json if it doesn't exists
     file: 
-      path: /home/deployer/acme.json
+      path: /home/deployer/volumes/traefik/acme/acme.json
       state: touch 
       mode: '600'
+    become: true
   - name: copy traefik config
     copy:
-      src: traefik.toml
-      dest: /home/deployer/traefik.toml
+      src: traefik.yml
+      dest: /home/deployer/volumes/traefik/traefik.yml
+    become: true
 
   # Mount Scaleway object storage as volume
   - name: copy .passwd-s3fs
@@ -74,16 +82,18 @@
       dest: /home/deployer/.passwd-s3fs
       mode: '600'
   - name: Creates directory homecloud_storage
-    file: path=/home/deployer/homecloud_storage state=directory
+    file: path=/data state=directory
+    become: yes
   - name: Unmount a mounted volume
     mount:
-      path: /home/deployer/homecloud_storage
+      path: /data
       state: unmounted
     become: yes
   - name: mount volume
-    shell: s3fs homecloud /home/deployer/homecloud_storage -o passwd_file=/home/deployer/.passwd-s3fs,url=https://s3.fr-par.scw.cloud
+    shell: s3fs homecloud /data -o passwd_file=/home/deployer/.passwd-s3fs,url=https://s3.fr-par.scw.cloud,allow_other
     args:
       executable: /bin/bash
+    become: yes
   #Docker
   - name: install docker
     pip:
