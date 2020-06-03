@@ -99,6 +99,11 @@
     pip:
       executable: /usr/bin/pip3
       name: docker
+  - name: restart docker
+    shell: service docker restart
+    args:
+      executable: /bin/bash
+    become: yes
   - name: install docker-compose
     pip:
       executable: /usr/bin/pip3
@@ -121,3 +126,4 @@
     command: docker-compose up -d
     args:
       chdir: /home/deployer
+      # todo add 'overwriteprotocol' => 'https' in config.php nextcloud

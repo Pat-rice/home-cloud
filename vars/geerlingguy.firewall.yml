@@ -1,2 +1,5 @@
 firewall_allowed_tcp_ports:
   - "2865"
+  - "80"
+  - "443"
+#  - "8080"
