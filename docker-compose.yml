@@ -2,54 +2,77 @@ version: '3'
 services:
   db:
     image: postgres:12
-    restart: always
+    restart: unless-stopped
     environment:
-        - POSTGRES_USER=postgres
-        - POSTGRES_PASSWORD=secret
-        - POSTGRES_DB=workaround
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_DB=workaround
     volumes:
-    - /home/deployer/volumes/postgres/data:/var/lib/postgresql/data
+      - /home/deployer/volumes/postgres/data:/var/lib/postgresql/data
     networks:
       - common
   nextcloud:
-    image: nextcloud:18
-    restart: always
+    image: nextcloud:20 # Should always update it incrementally, doesn't support skipping versions !
+    restart: unless-stopped
     environment:
-        - POSTGRES_DB=nextcloud 
-        - POSTGRES_USER=postgres 
-        - POSTGRES_PASSWORD=secret
-        - POSTGRES_HOST=db
-        - NEXTCLOUD_ADMIN_USER=admin
-        - NEXTCLOUD_ADMIN_PASSWORD=admin
+      - POSTGRES_DB=nextcloud
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=secret
+      - POSTGRES_HOST=db
+      - NEXTCLOUD_ADMIN_USER=admin
+      - NEXTCLOUD_ADMIN_PASSWORD=admin
     labels:
       traefik.http.routers.nextcloudproxy.rule: Host(`cloud.mouillou.ch`)
       traefik.http.routers.nextcloudproxy.tls: true
       traefik.http.routers.nextcloudproxy.tls.certresolver: sample
-      traefik.http.routers.nextcloudproxy.entrypoints: web-secure
+      traefik.http.routers.nextcloudproxy.entrypoints: websecure
       traefik.http.services.nextcloudservice.loadbalancer.server.port: 80
     volumes:
-    - /home/deployer/volumes/nextcloud:/var/www/html
+      - /home/deployer/volumes/nextcloud:/var/www/html
     networks:
       - common
     depends_on:
       - db
+  beets:
+    image: linuxserver/beets
+    restart: unless-stopped
+    container_name: beets
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/London
+    volumes:
+      - /data/beets/config:/config
+      - /data/beets/music:/music
+      - /data/beets/downloads:/downloads
+    labels:
+      traefik.http.routers.beetsproxy.rule: Host(`beets.mouillou.ch`)
+      traefik.http.routers.beetsproxy.tls: true
+      traefik.http.routers.beetsproxy.tls.certresolver: sample
+      traefik.http.routers.beetsproxy.entrypoints: websecure
+      traefik.http.services.beetsservice.loadbalancer.server.port: 8337
+    networks:
+      - common
   traefik:
-    image: traefik:2.1
+    image: traefik
     # The official Traefik docker image
-    restart: always
-#    command: --docker # Enables the web UI and tells Traefik to listen to docker
+    restart: unless-stopped
+    #    command: --docker # Enables the web UI and tells Traefik to listen to docker
     ports:
       - 80:80
       - 443:443
-#      - 8080:8080 # dashboard
+    #      - 8080:8080 # dashboard
     networks:
       - web
       - common
     labels:
-      traefik.http.routers.http-catchall.rule: hostregexp(`{host:.+}`)
-      traefik.http.routers.http-catchall.entrypoints: web
-      traefik.http.routers.http-catchall.middlewares: redirect-to-https@docker
-      traefik.http.middlewares.redirect-to-https.redirectscheme.scheme: https
+      traefik.http.routers.api.rule: Host(`traefik.mouillou.ch`)
+      traefik.http.routers.api.service: api@internal
+      traefik.http.routers.api.entrypoints: websecure
+      traefik.http.routers.api.tls: true
+      traefik.http.services.api.loadbalancer.server.port: 8080
+#      traefik.http.routers.api.middlewares: auth
+#      traefik.http.middlewares.auth.basicauth.users: mouillou:$apr1$hkMuovWS$wUpxD/lr3PDz/pIQ6d.LT1 #mouillou 4pG3baKQhZAbanzjtUNa
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock
       - /home/deployer/volumes/traefik:/etc/traefik

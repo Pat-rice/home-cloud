@@ -126,4 +126,3 @@
     command: docker-compose up -d
     args:
       chdir: /home/deployer
-      # todo add 'overwriteprotocol' => 'https' in config.php nextcloud
